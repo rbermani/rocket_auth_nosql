@@ -1,0 +1,66 @@
+[package]
+name = "rocket_auth_nosql"
+version = "0.0.1"
+authors = ["bobbermani@gmail.com"]
+edition = "2018"
+license = "MIT or Apache-2.0"
+description = "A NoSQL User Authentication Library for Rocket applications. It supports a MongoDB backend."
+repository = "https://github.com/rbermani/rocket_auth_nosql"
+readme = "README.md"
+categories = ["web-programming"]
+keywords = ["rocket", "authentication", "auth", "session"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+rand = "0.8.3"
+rust-argon2 = "0.8.3"
+lazy_static = "1.4.0"
+regex = "1"
+serde_json = "1.0.59"
+chashmap = "2.2.2"
+thiserror = "1.0.25"
+async-trait = "0.1.56"
+fehler = "1.0.0"
+chrono = "0.4.19"
+validator = { version = "0.14.0", features = ["derive"] }
+mongodb = "2.2.2"
+
+[dependencies.rocket]
+version = "0.5.0-rc.1"
+features = ["secrets"]
+
+[dependencies.serde]
+version = "1.0.125"
+features = ["derive"]
+
+[dependencies.redis]
+version = "0.20.0"
+features = ["aio", "tokio-comp"]
+optional = true
+
+[dependencies.futures]
+version = "0.3.16"
+
+[dependencies.tokio]
+version = "1.4.0"
+features = ["rt", "rt-multi-thread"]
+
+[dev-dependencies.rocket]
+version = "0.5.0-rc.1"
+features = ["secrets", "json"]
+
+[dev-dependencies.redis]
+version = "0.20.0"
+features = ["aio", "tokio-comp"]
+
+[dev-dependencies.rocket_dyn_templates]
+version = "0.1.0-rc.1"
+features = ["tera"]
+
+[dev-dependencies.rocket_auth_nosql]
+path = "../rocket_auth_nosql"
+features = ["redis"]
