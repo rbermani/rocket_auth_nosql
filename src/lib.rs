@@ -167,8 +167,12 @@ pub struct User {
     pub id: Option<ObjectId>,
     email: String,
     pub is_admin: bool,
-//    #[serde(skip_serializing)]
+    is_verified: bool,
+    verification_token: String,
     password: String,
+    prev_password: Option<String>,
+    prev_password_1: Option<String>,
+    prev_password_2: Option<String>,
 }
 
 /// The [`AdminUser`] guard can be used analogously to [`User`].
@@ -183,6 +187,20 @@ pub struct User {
 /// ```
 #[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
 pub struct AdminUser(User);
+
+/// The [`UnverifiedUser`] guard can be used analogously to [`User`].
+/// It is restricted to content for users that have authenticated
+/// but have not yet verified their email address.
+/// ```
+/// # use rocket::*;
+/// # use rocket_auth_nosql::UnverifiedUser;
+/// #[get("/newuser-panel")]
+/// fn newuser_panel(user: UnverifiedUser) -> String {
+///    format!("Hello {}.", user.email())
+/// }
+/// ```
+#[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
+pub struct UnverifiedUser(User);
 
 impl Debug for AdminUser {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

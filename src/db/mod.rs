@@ -5,7 +5,7 @@ use mongodb::bson::{oid::ObjectId};
 
 #[rocket::async_trait]
 pub trait DBConnection: Send + Sync {
-    async fn create_user(&self, email: &str, hash: &str, is_admin: bool) -> Result<(), Error>;
+    async fn create_user(&self, email: &str, hash: &str, token: &str, is_admin: bool) -> Result<(), Error>;
     async fn update_user(&self, user: &User) -> Result<()>;
     async fn delete_user_by_id(&self, user_id: ObjectId) -> Result<()>;
     async fn delete_user_by_email(&self, email: &str) -> Result<()>;
@@ -16,8 +16,8 @@ pub trait DBConnection: Send + Sync {
 
 #[rocket::async_trait]
 impl<T: DBConnection> DBConnection for std::sync::Arc<T> {
-    async fn create_user(&self, email: &str, hash: &str, is_admin: bool) -> Result<(), Error> {
-        T::create_user(self, email, hash, is_admin).await
+    async fn create_user(&self, email: &str, hash: &str, token: &str, is_admin: bool) -> Result<(), Error> {
+        T::create_user(self, email, hash, token, is_admin).await
     }
     async fn update_user(&self, user: &User) -> Result<()> {
         T::update_user(self, user).await
@@ -41,8 +41,8 @@ impl<T: DBConnection> DBConnection for std::sync::Arc<T> {
 
 #[rocket::async_trait]
 impl<T: DBConnection> DBConnection for tokio::sync::Mutex<T> {
-    async fn create_user(&self, email: &str, hash: &str, is_admin: bool) -> Result<(), Error> {
-        self.lock().await.create_user(email, hash, is_admin).await
+    async fn create_user(&self, email: &str, hash: &str, token: &str, is_admin: bool) -> Result<(), Error> {
+        self.lock().await.create_user(email, hash, token, is_admin).await
     }
     async fn update_user(&self, user: &User) -> Result<()> {
         self.lock().await.update_user(user).await

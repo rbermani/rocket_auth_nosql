@@ -44,6 +44,11 @@ fn logout(auth: Auth<'_>) -> Result<Template, Error> {
     auth.logout()?;
     Ok(Template::render("logout", json!({})))
 }
+// #[get("/activate/?<email>&<token>")]
+// fn get_activate(email: &str, token: &str) -> Result<Template, Error> {
+
+//     Ok(Template::render("activate", json!({})))
+// }
 #[get("/delete")]
 async fn delete(auth: Auth<'_>) -> Result<Template, Error> {
     auth.delete().await?;
@@ -76,6 +81,7 @@ async fn main() -> Result<(), Error> {
                 get_login,
                 post_signup,
                 get_signup,
+                //get_activate,
                 post_login,
                 logout,
                 delete,

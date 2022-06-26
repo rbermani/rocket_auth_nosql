@@ -27,7 +27,9 @@ pub enum Error {
     /// This error occurs when the user does exists, but their password was incorrect.
     #[error("Incorrect email or password")]
     UnauthorizedError,
-
+    /// This error occurs when the user has authenticated but the account is not verified
+    #[error("Unverified email address")]
+    UnverifiedError,
     /// A wrapper around [`validator::ValidationError`].
     #[error("{0}")]
     FormValidationError(#[from] validator::ValidationError),

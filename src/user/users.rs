@@ -3,6 +3,7 @@ use crate::db::DBConnection;
 use crate::prelude::*;
 use mongodb::bson::{oid::ObjectId};
 use mongodb::{Client, options::ClientOptions};
+use sha2::{Sha256, Digest};
 
 impl Users {
     /// Opens a redis connection. It allows for sessions to be stored persistently across
@@ -98,11 +99,14 @@ impl Users {
     /// ```
     #[throws(Error)]
     pub async fn create_user(&self, email: &str, password: &str, is_admin: bool) {
+        let mut hasher = Sha256::new();
+        hasher.update(rand_string(30).as_bytes());
+        let verification_hash = format!("{:X}", hasher.finalize());
         let password = password.as_bytes();
         let salt = rand_string(30);
         let config = argon2::Config::default();
         let hash = argon2::hash_encoded(password, salt.as_bytes(), &config).unwrap();
-        self.conn.create_user(email, &hash, is_admin).await?;
+        self.conn.create_user(email, &hash, &verification_hash, is_admin).await?;
     }
 
     /// Deletes a user from de database. Note that this method won't delete the session.

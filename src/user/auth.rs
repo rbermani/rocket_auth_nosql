@@ -33,7 +33,7 @@ use std::time::Duration;
 /// }
 /// #[tokio::main]
 /// async fn main() -> Result<(), Error>{
-///     let users = Users::open_sqlite("mydb.db").await?;
+///     let users = Users::open_mongodb("mongodb://localhost:27017", DATABASE).await?;
 ///
 ///     rocket::build()
 ///         .mount("/", routes![signup, login, logout])

@@ -6,12 +6,11 @@ use mongodb::options::IndexOptions;
 use mongodb::{Database,IndexModel};
 use crate::Error::UserNotFoundError;
 
-
 const COLLECTION: &str = "users";
 
 #[rocket::async_trait]
 impl DBConnection for Database {
-    async fn create_user(&self, email: &str, hash: &str, is_admin: bool) -> Result<()> {
+    async fn create_user(&self, email: &str, hash: &str, token: &str, is_admin: bool) -> Result<()> {
         let new_index = IndexModel::builder()
             .keys(doc!{"email": 1})
             .options(IndexOptions::builder()
@@ -23,7 +22,12 @@ impl DBConnection for Database {
             id: None,
 			email: email.to_string(),
 			is_admin: is_admin,
-			password: hash.to_string()
+            is_verified: false,
+            verification_token: token.to_string(),
+			password: hash.to_string(),
+            prev_password: None,
+            prev_password_1: None,
+            prev_password_2: None
 		};
         // Ensure the collection index exists for unique email values
         self.collection::<User>(COLLECTION)

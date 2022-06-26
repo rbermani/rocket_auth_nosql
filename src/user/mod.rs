@@ -1,5 +1,5 @@
 pub mod auth;
-mod user_impl;
+mod user;
 mod users;
 use crate::prelude::*;
 use argon2::verify_encoded as verify;

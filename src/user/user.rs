@@ -34,6 +34,27 @@ impl User {
         self.password = hash;
     }
 
+    /// Activates the account of a user using the token sent via email
+    /// ```
+    /// # use rocket_auth_nosql::Auth;
+    /// # use rocket::post;
+    /// # #[post("/activate")]
+    /// # fn example(auth: Auth<'_>) {
+    ///     auth.change_password("new password");
+    /// # }
+    /// ```
+    // #[throws(Error)]
+    // pub fn activate_account(&self, token: &str) {
+    //     if self.is_auth() {
+    //         let session = self.get_session()?;
+    //         let mut user = self.users.get_by_id(session.id).await?;
+    //         //user.set_password(password)?;
+    //         //self.users.modify(&user).await?;
+    //     } else {
+    //         throw!(Error::UnauthorizedError)
+    //     }
+    // }
+
     /// This is an accessor function for the private `id` field.
     /// This field is private so it is not modified by accident when updating a user.
     /// ```rust
@@ -109,7 +130,30 @@ impl<'r> FromRequest<'r> for User {
             Forward(x) => return Forward(x),
         };
         if let Some(user) = auth.get_user().await {
-            Outcome::Success(user)
+            if user.is_verified {
+                Outcome::Success(user)
+            } else {
+                Outcome::Failure((Status::Unauthorized, Error::UnverifiedError))
+            }
+        } else {
+            Outcome::Failure((Status::Unauthorized, Error::UnauthorizedError))
+        }
+    }
+}
+
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for UnverifiedUser {
+    type Error = Error;
+    async fn from_request(request: &'r Request<'_>) -> Outcome<UnverifiedUser, Error> {
+        use rocket::outcome::Outcome::*;
+        let guard = request.guard().await;
+        let auth: Auth = match guard {
+            Success(auth) => auth,
+            Failure(x) => return Failure(x),
+            Forward(x) => return Forward(x),
+        };
+        if let Some(user) = auth.get_user().await {
+            Outcome::Success(UnverifiedUser(user))
         } else {
             Outcome::Failure((Status::Unauthorized, Error::UnauthorizedError))
         }
@@ -128,7 +172,7 @@ impl<'r> FromRequest<'r> for AdminUser {
             Forward(x) => return Forward(x),
         };
         if let Some(user) = auth.get_user().await {
-            if user.is_admin {
+            if user.is_admin && user.is_verified {
                 return Outcome::Success(AdminUser(user));
             }
         }
@@ -158,3 +202,4 @@ impl std::convert::TryFrom<User> for AdminUser {
         }
     }
 }
+

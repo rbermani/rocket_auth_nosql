@@ -12,7 +12,7 @@ For more information visit rocket's [configuration guide](https://rocket.rs/v0.5
 # TODO
 - [ ] Ajax inline form responses
 - [ ] Forgotten password reset mechanism
-- [ ] Email confirmation step for new user sign-up
+- [ ] New User sign-up email verification
 - [ ] Prevent re-use of previous password during validation
 - [ ] Unit tests
 

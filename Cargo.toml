@@ -17,6 +17,7 @@ all-features = true
 
 [dependencies]
 rand = "0.8.3"
+sha2 = "0.10.2"
 rust-argon2 = "0.8.3"
 lazy_static = "1.4.0"
 regex = "1"
