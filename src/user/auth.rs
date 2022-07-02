@@ -8,7 +8,9 @@ use rocket::State;
 use serde_json::json;
 use std::time::Duration;
 
-/// The [`Auth`] guard allows to log in, log out, sign up, modify, and delete the currently (un)authenticated user.
+/// The [`Auth`] guard allows the user to log in, log out, sign up, modify, and delete the currently (un)authenticated user.
+/// The [`User`] guard only succeeds if the user has verified their account and fully authenticated.
+/// /// The [`UnverifiedUser`] guard succeeds if the user is authenticated, but has not yet verified their account.
 /// For more information see [`Auth`].
 ///  A working example:
 /// ```rust,no_run
@@ -87,8 +89,8 @@ impl<'a> Auth<'a> {
     ///     auth.login(&form);
     /// }
     /// ```
-    #[throws(Error)]
-    pub async fn login(&self, form: &Login) {
+
+    pub async fn login(&self, form: &Login) -> Result<()> {
         let key = self.users.login(form).await?;
         let user = self.users.get_by_email(&form.email).await?;
         let session = Session {
@@ -99,6 +101,7 @@ impl<'a> Auth<'a> {
         };
         let to_str = format!("{}", json!(session));
         self.cookies.add_private(Cookie::new("rocket_auth_nosql", to_str));
+        Ok(())
     }
 
     /// Logs a user in for the specified period of time.
@@ -112,8 +115,8 @@ impl<'a> Auth<'a> {
     ///     auth.login_for(&form, one_hour);
     /// }
     /// ```
-    #[throws(Error)]
-    pub async fn login_for(&self, form: &Login, time: Duration) {
+
+    pub async fn login_for(&self, form: &Login, time: Duration) -> Result<()>  {
         let key = self.users.login_for(form, time).await?;
         let user = self.users.get_by_email(&form.email).await?;
 
@@ -126,6 +129,7 @@ impl<'a> Auth<'a> {
         let to_str = format!("{}", json!(session));
         let cookie = Cookie::new("rocket_auth_nosql", to_str);
         self.cookies.add_private(cookie);
+        Ok(())
     }
 
     /// Creates a new user from a form or a json. The user will not be authenticated by default.
@@ -141,9 +145,10 @@ impl<'a> Auth<'a> {
     ///     Ok("Logged in")
     /// }
     /// ```
-    #[throws(Error)]
-    pub async fn signup(&self, form: &Signup) {
-        self.users.signup(form).await?;
+
+    pub async fn signup(&self, form: &Signup) -> Result<()>  {
+        self.users.signup(form).await;
+        Ok(())
     }
 
     /// Creates a new user from a form or a json.
@@ -158,10 +163,11 @@ impl<'a> Auth<'a> {
     ///     auth.signup_for(&form, one_hour);
     /// }
     /// ```
-    #[throws(Error)]
-    pub async fn signup_for(&self, form: &Signup, time: Duration) {
-        self.users.signup(form).await?;
+
+    pub async fn signup_for(&self, form: &Signup, time: Duration) -> Result<()>  {
+        self.users.signup(form).await;
         self.login_for(&form.clone().into(), time).await?;
+        Ok(())
     }
 
     ///
@@ -217,11 +223,12 @@ impl<'a> Auth<'a> {
     ///     auth.logout();
     /// }
     /// ```
-    #[throws(Error)]
-    pub fn logout(&self) {
+
+    pub fn logout(&self) -> Result<()>  {
         let session = self.get_session()?;
-        self.users.logout(session)?;
+        self.users.logout(session);
         self.cookies.remove_private(Cookie::named("rocket_auth_nosql"));
+        Ok(())
     }
     /// Deletes the account of the currently authenticated user.
     /// ```rust
@@ -232,14 +239,15 @@ impl<'a> Auth<'a> {
     ///     auth.delete();
     /// }
     /// ```
-    #[throws(Error)]
-    pub async fn delete(&self) {
+
+    pub async fn delete(&self)-> Result<()>  {
         if self.is_auth() {
             let session = self.get_session()?;
-            self.users.delete(session.id).await?;
+            self.users.delete(session.id).await;
             self.cookies.remove_private(Cookie::named("rocket_auth_nosql"));
+            Ok(())
         } else {
-            throw!(Error::UnauthenticatedError)
+            Err(Error::UnauthenticatedError)
         }
     }
 
@@ -252,18 +260,39 @@ impl<'a> Auth<'a> {
     ///     auth.change_password("new password");
     /// # }
     /// ```
-    #[throws(Error)]
-    pub async fn change_password(&self, password: &str) {
+
+    pub async fn change_password(&self, password: &str) -> Result<()>  {
         if self.is_auth() {
             let session = self.get_session()?;
             let mut user = self.users.get_by_id(session.id).await?;
             user.set_password(password)?;
-            self.users.modify(&user).await?;
+            self.users.modify(&user).await;
+            Ok(())
         } else {
-            throw!(Error::UnauthorizedError)
+            Err(Error::UnauthorizedError)
         }
     }
+    /// Changes the password of the currently authenticated user
+    /// ```
+    /// # use rocket_auth_nosql::Auth;
+    /// # use rocket::post;
+    /// # #[post("/change")]
+    /// # fn example(auth: Auth<'_>) {
+    ///     auth.change_password("new password");
+    /// # }
+    /// ```
 
+    pub async fn verify_account(&self, token: &str) -> Result<()>  {
+        if self.is_auth() {
+            let session = self.get_session()?;
+            let mut user = self.users.get_by_id(session.id).await?;
+            user.set_verified(token)?;
+            self.users.modify(&user).await;
+            Ok(())
+        } else {
+            Err(Error::VerificationTokenMismatch)
+        }
+    }
     /// Changes the email of the currently authenticated user
     /// ```
     /// # use rocket_auth_nosql::Auth;
@@ -271,18 +300,19 @@ impl<'a> Auth<'a> {
     /// auth.change_email("new@email.com".into());
     /// # }
     /// ```
-    #[throws(Error)]
-    pub async fn change_email(&self, email: String) {
+
+    pub async fn change_email(&self, email: String) -> Result<()>  {
         if self.is_auth() {
             if !validator::validate_email(&email) {
-                throw!(Error::InvalidEmailAddressError)
+                return Err(Error::InvalidEmailAddressError);
             }
             let session = self.get_session()?;
             let mut user = self.users.get_by_id(session.id).await?;
             user.email = email;
-            self.users.modify(&user).await?;
+            self.users.modify(&user).await;
+            Ok(())
         } else {
-            throw!(Error::UnauthorizedError)
+            Err(Error::UnauthorizedError)
         }
     }
 

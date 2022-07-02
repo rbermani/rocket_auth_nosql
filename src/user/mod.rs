@@ -25,8 +25,7 @@ impl Users {
         }
     }
 
-    #[throws(Error)]
-    async fn login(&self, form: &Login) -> String {
+    async fn login(&self, form: &Login) -> Result<String> {
         let form_pwd = &form.password.as_bytes();
         let user = self
             .conn
@@ -35,55 +34,59 @@ impl Users {
             .map_err(|_| Error::EmailDoesNotExist(form.email.clone()))?;
         let user_pwd = &user.password;
         if verify(user_pwd, form_pwd)? {
-            self.set_auth_key(user.id.unwrap())?
+            self.set_auth_key(user.id.unwrap())
         } else {
-            throw!(Error::UnauthorizedError)
+            Err(Error::UnauthorizedError)
         }
     }
-    #[throws(Error)]
-    fn logout(&self, session: &Session) {
+
+    fn logout(&self, session: &Session)-> Result<()>  {
         if self.is_auth(session) {
             self.sess.remove(session.id)?;
         }
+        Ok(())
     }
 
-    #[throws(Error)]
-    fn set_auth_key_for(&self, user_id: ObjectId, time: Duration) -> String {
+    fn set_auth_key_for(&self, user_id: ObjectId, time: Duration) -> Result<String> {
         let key = rand_string(10);
         self.sess.insert_for(user_id, key.clone(), time)?;
-        key
+        Ok(key)
     }
 
-    #[throws(Error)]
-    fn set_auth_key(&self, user_id: ObjectId) -> String {
+    fn set_auth_key(&self, user_id: ObjectId) -> Result<String> {
         let key = rand_string(15);
         self.sess.insert(user_id, key.clone())?;
-        key
+        Ok(key)
     }
 
-    #[throws(Error)]
-    async fn signup(&self, form: &Signup) {
+    async fn signup(&self, form: &Signup) -> Result<()>  {
         form.validate()?;
         let email = &form.email;
         let password = &form.password;
         let result = self.create_user(email, password, false).await;
         match result {
-            Ok(_) => (),
+            Ok(_) => {
+                // Send an account verification e-mail if the Mailer is available, otherwise auto-activate
+                if self.mailer.is_some() {
+                    
+                }
+                Ok(())
+            },
             Err(error) => {
-                throw!(error)
+                Err(error)
             }
         }
+
     }
 
-    #[throws(Error)]
-    async fn login_for(&self, form: &Login, time: Duration) -> String {
+    async fn login_for(&self, form: &Login, time: Duration) -> Result<String> {
         let form_pwd = &form.password.as_bytes();
         let user = self.conn.get_user_by_email(&form.email).await?;
         let user_pwd = &user.password;
         if verify(user_pwd, form_pwd)? {
-            self.set_auth_key_for(user.id.unwrap(), time)?
+            Ok(self.set_auth_key_for(user.id.unwrap(), time)?)
         } else {
-            throw!(Error::UnauthorizedError)
+            Err(Error::UnauthorizedError)
         }
     }
 }

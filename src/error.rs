@@ -27,9 +27,15 @@ pub enum Error {
     /// This error occurs when the user does exists, but their password was incorrect.
     #[error("Incorrect email or password")]
     UnauthorizedError,
+    /// This error occurs when a request to verify a client's email address contains an invalid verification token
+    #[error("Invalid account verification token")]
+    VerificationTokenMismatch,
     /// This error occurs when the user has authenticated but the account is not verified
     #[error("Unverified email address")]
     UnverifiedError,
+    /// This error occurs when the SMTP server request encountered an error
+    #[error("SMTP Transport Error")]
+    SmtpRequestError,
     /// A wrapper around [`validator::ValidationError`].
     #[error("{0}")]
     FormValidationError(#[from] validator::ValidationError),
@@ -61,8 +67,10 @@ impl Error {
         match self {
             MongoDBError(err) => format!("{}", err),
             InvalidEmailAddressError
+            | VerificationTokenMismatch
             | EmailAlreadyExists
             | UnauthorizedError
+            | SmtpRequestError
             | UserNotFoundError => format!("{}", self),
             FormValidationErrors(source) => {
                 source

@@ -9,8 +9,15 @@ The available features are:
 This means that in order for cookies to be properly decrypted between launches, a `secret_key` must be set.
 For more information visit rocket's [configuration guide](https://rocket.rs/v0.5-rc/guide/configuration/#configuration).
 
+# New Features
+- [x] Replace backend with MongoDB
+- [x] Refactoring to use more idiomatic Rust
+- [x] Add UnverifiedUser guard
+
 # TODO
 - [ ] Ajax inline form responses
+- [ ] Add E-mail logic
+- [ ] Protected selection criteria schema change, so password field is only returned on explicit queries
 - [ ] Forgotten password reset mechanism
 - [ ] New User sign-up email verification
 - [ ] Prevent re-use of previous password during validation
@@ -24,25 +31,25 @@ To use `rocket_auth_nosql` include it as a dependency in your Cargo.toml file:
 version = "0.0.1"
 ```
 # Quick overview
-This crate provides three guards:
-* `Auth`: Manages authentication.
-* `Session`: It's used to retrieve session data from client cookies.
-* `User`: It restricts content, so it can be viewed by authenticated clients only.
-
+This crate provides five guards:
+* [`Auth`]: Manages authentication.
+* [`Session`]: Used to retrieve session data from client cookies.
+* [`UnverifiedUser`]: Succeeds if the user is authenticated, but has not yet verified their account.
+* [`User`]: Restricted content, so it can be viewed by authenticated and verified clients only.
+* [`AdminUser`]: Restricts Controls, that can only be used by privileged, authenticated, and verified users with the administrator flag set.
 
 It also includes two structs to be parsed from forms and json data:
-* `Signup`: Used to create new users.
-* `Login`: Used to authenticate users.
-
+* [`Signup`]: Used to create new users.
+* [`Login`]: Used to authenticate users.
 
 Finally it has two structures for queries:
-* `Users`: It allows to query users to the database.
-* `User`: It is the response of a query.
-
-
-The `Auth` guard allows to log in, log out, sign up, modify, and delete the currently (un)authenticated user.
-For more information see `Auth`.
- A working example:
+* [`Users`]: It allows to query users to the database.
+* [`User`]: It is the response of a query.
+## Auth guard
+The [`Auth`] guard allows to log in, log out, sign up, modify, and delete the currently (un)authenticated user.
+For more information see [`Auth`]. Because of Rust's ownership rules, you may not retrieve both [`rocket::http::CookieJar`] and the [`Auth`] guard
+simultaneously. However, retrieving cookies is not needed since `Auth` stores them in the public field [`Auth::cookies`].
+A working example:
 ```rust
 use rocket::{get, post, form::Form, routes};
 use rocket_auth_nosql::{Users, Error, Auth, Signup, Login};

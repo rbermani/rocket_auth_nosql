@@ -24,16 +24,37 @@ impl User {
     ///     Ok(())
     /// }
     /// ```
-    #[throws(Error)]
-    pub fn set_password(&mut self, new: &str) {
+
+    pub fn set_password(&mut self, new: &str) -> Result<()> {
         crate::forms::is_secure(new)?;
         let password = new.as_bytes();
         let salt = rand_string(10);
         let config = argon2::Config::default();
         let hash = argon2::hash_encoded(password, salt.as_bytes(), &config).unwrap();
         self.password = hash;
+        Ok(())
     }
+    /// This method sets the account flag to indicate the email address is verified.
+    /// ```rust
+    /// # use rocket::{State, get};
+    /// # use rocket_auth_nosql::{Error, Users};
+    /// #[get("/reset-password/<id>/<new_password>")]
+    /// async fn reset_password(id: i32, new_password: String, users: &State<Users>) -> Result<(), Error> {
+    ///     let mut user = users.get_by_id(id).await?;
+    ///     user.set_password(&new_password);
+    ///     users.modify(&user).await?;
+    ///     Ok(())
+    /// }
+    /// ```
 
+    pub fn set_verified(&mut self, token: &str) -> Result<()> {
+        if self.verification_token.eq(token) {
+            self.is_verified = true;
+        } else {
+            return Err(Error::VerificationTokenMismatch);
+        }
+        Ok(())
+    }
     /// Activates the account of a user using the token sent via email
     /// ```
     /// # use rocket_auth_nosql::Auth;
@@ -43,7 +64,6 @@ impl User {
     ///     auth.change_password("new password");
     /// # }
     /// ```
-    // #[throws(Error)]
     // pub fn activate_account(&self, token: &str) {
     //     if self.is_auth() {
     //         let session = self.get_session()?;
@@ -51,7 +71,7 @@ impl User {
     //         //user.set_password(password)?;
     //         //self.users.modify(&user).await?;
     //     } else {
-    //         throw!(Error::UnauthorizedError)
+    //         Err(Error::UnauthorizedError)
     //     }
     // }
 
@@ -96,12 +116,12 @@ impl User {
     ///     Ok("Your user email was changed".into())
     /// }
     /// ```
-    #[throws(Error)]
-    pub fn set_email(&mut self, email: &str) {
+
+    pub fn set_email(&mut self, email: &str) -> Result<()> {
         if validator::validate_email(email) {
-            self.email = email.into();
+            Ok(self.email = email.into())
         } else {
-            throw!(Error::InvalidEmailAddressError)
+            Err(Error::InvalidEmailAddressError)
         }
     }
 }

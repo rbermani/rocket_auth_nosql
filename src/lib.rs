@@ -17,10 +17,12 @@
 //! version = "0.0.1"
 //! ```
 //! # Quick overview
-//! This crate provides three guards:
+//! This crate provides five guards:
 //! * [`Auth`]: Manages authentication.
 //! * [`Session`]: Used to retrieve session data from client cookies.
-//! * [`User`]: Restricts content, so it can be viewed by authenticated clients only.
+//! * [`UnverifiedUser`]: Succeeds if the user is authenticated, but has not yet verified their account.
+//! * [`User`]: Restricted content, so it can be viewed by authenticated and verified clients only.
+//! * [`AdminUser`]: Restricts Controls, that can only be used by privileged, authenticated, and verified users with the administrator flag set.
 //!
 //!
 //! It also includes two structs to be parsed from forms and json data:
@@ -132,6 +134,7 @@
 
 mod cookies;
 mod db;
+mod email;
 mod error;
 mod forms;
 pub mod prelude;
@@ -144,10 +147,10 @@ mod tests;
 use std::fmt::Debug;
 
 pub use prelude::*;
-
 pub use crate::user::auth::Auth;
 pub use cookies::Session;
 pub use error::Error;
+use crate::email::Mailer;
 use mongodb::bson::{oid::ObjectId};
 
 /// The `User` guard can be used to restrict content so it can only be viewed by authenticated users.
@@ -212,4 +215,5 @@ impl Debug for AdminUser {
 pub struct Users {
     conn: Box<dyn DBConnection>,
     sess: Box<dyn SessionManager>,
+    mailer: Option<Box<Mailer>>,
 }

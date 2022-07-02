@@ -5,13 +5,13 @@ use mongodb::bson::{oid::ObjectId};
 
 #[rocket::async_trait]
 pub trait DBConnection: Send + Sync {
-    async fn create_user(&self, email: &str, hash: &str, token: &str, is_admin: bool) -> Result<(), Error>;
+    async fn create_user(&self, email: &str, hash: &str, token: &str, is_admin: bool) -> Result<()>;
     async fn update_user(&self, user: &User) -> Result<()>;
     async fn delete_user_by_id(&self, user_id: ObjectId) -> Result<()>;
     async fn delete_user_by_email(&self, email: &str) -> Result<()>;
     async fn get_user_by_id(&self, user_id: ObjectId) -> Result<User>;
     async fn get_user_by_email(&self, email: &str) -> Result<User>;
-    async fn get_all_users(&self) -> Vec<User>;
+    async fn get_all_users(&self) -> Result<Vec<User>>;
 }
 
 #[rocket::async_trait]
@@ -34,7 +34,7 @@ impl<T: DBConnection> DBConnection for std::sync::Arc<T> {
     async fn get_user_by_email(&self, email: &str) -> Result<User> {
         T::get_user_by_email(self, email).await
     }
-    async fn get_all_users(&self) -> Vec<User> {
+    async fn get_all_users(&self) -> Result<Vec<User>> {
         T::get_all_users(self).await
     }
 }
@@ -59,7 +59,7 @@ impl<T: DBConnection> DBConnection for tokio::sync::Mutex<T> {
     async fn get_user_by_email(&self, email: &str) -> Result<User> {
         self.lock().await.get_user_by_email(email).await
     }
-    async fn get_all_users(&self) -> Vec<User> {
+    async fn get_all_users(&self) -> Result<Vec<User>> {
         self.lock().await.get_all_users().await
     }
 }

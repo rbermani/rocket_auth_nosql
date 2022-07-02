@@ -21,10 +21,10 @@ impl Users {
     /// # Ok(()) }
     /// ```
     #[cfg(feature = "redis")]
-    #[throws(Error)]
-    pub fn open_redis(&mut self, path: impl redis::IntoConnectionInfo) {
+    pub fn open_redis(&mut self, path: impl redis::IntoConnectionInfo) -> Result<()> {
         let client = redis::Client::open(path)?;
         self.sess = Box::new(client);
+        Ok(())
     }
     /// It creates a `Users` instance by connecting  it to a mongdb database.
     ///
@@ -39,14 +39,11 @@ impl Users {
     /// # Ok(()) }
     ///
     /// ```
-    #[throws(Error)]
-    pub async fn open_mongodb(path: &str, database: &str) -> Self {
+    pub async fn open_mongodb(path: &str, database: &str) -> Result<Self> {
         let client_options = ClientOptions::parse(path).await?;
         let client = Client::with_options(client_options)?;
         let conn = client.database(database).clone();
-
-        let users: Users = conn.into();
-        users
+        Ok(conn.into())
     }
     /// It queries a user by their email.
     /// ```
@@ -60,9 +57,9 @@ impl Users {
     /// }
     /// # fn main() {}
     /// ```
-    #[throws(Error)]
-    pub async fn get_by_email(&self, email: &str) -> User {
-        self.conn.get_user_by_email(email).await?
+
+    pub async fn get_by_email(&self, email: &str) -> Result<User> {
+        Ok(self.conn.get_user_by_email(email).await?)
     }
 
     /// It queries a user by their id.
@@ -77,13 +74,12 @@ impl Users {
     /// # }
     /// # fn main() {}
     /// ```
-    #[throws(Error)]
-    pub async fn get_by_id(&self, user_id: ObjectId) -> User {
-        self.conn.get_user_by_id(user_id).await?
+    pub async fn get_by_id(&self, user_id: ObjectId) -> Result<User> {
+        Ok(self.conn.get_user_by_id(user_id).await?)
     }
 
-    #[throws(Error)]
-    pub async fn get_all_users(&self) -> Vec<User> {
+    /// Returns all users in the collection
+    pub async fn get_all_users(&self) -> Result<Vec<User>> {
         self.conn.get_all_users().await
     }
     /// Inserts a new user in the database. It will fail if the user already exists.
@@ -97,8 +93,7 @@ impl Users {
     /// }
     /// # fn main() {}
     /// ```
-    #[throws(Error)]
-    pub async fn create_user(&self, email: &str, password: &str, is_admin: bool) {
+    pub async fn create_user(&self, email: &str, password: &str, is_admin: bool) -> Result<()> {
         let mut hasher = Sha256::new();
         hasher.update(rand_string(30).as_bytes());
         let verification_hash = format!("{:X}", hasher.finalize());
@@ -107,9 +102,10 @@ impl Users {
         let config = argon2::Config::default();
         let hash = argon2::hash_encoded(password, salt.as_bytes(), &config).unwrap();
         self.conn.create_user(email, &hash, &verification_hash, is_admin).await?;
+        Ok(())
     }
 
-    /// Deletes a user from de database. Note that this method won't delete the session.
+    /// Deletes a user from the database. Note that this method won't delete the session.
     /// To do that use [`Auth::delete`](crate::Auth::delete).
     /// ```
     /// #[get("/delete_user/<id>")]
@@ -118,10 +114,10 @@ impl Users {
     ///     Ok("The user has been deleted.")
     /// }
     /// ```
-    #[throws(Error)]
-    pub async fn delete(&self, id: ObjectId) {
+    pub async fn delete(&self, id: ObjectId) -> Result<()> {
         self.sess.remove(id)?;
         self.conn.delete_user_by_id(id).await?;
+        Ok(())
     }
 
     /// Modifies a user in the database.
@@ -134,9 +130,9 @@ impl Users {
     /// users.modify(&user).await?;
     /// # Ok(())}
     /// ```
-    #[throws(Error)]
-    pub async fn modify(&self, user: &User) {
+    pub async fn modify(&self, user: &User) -> Result<()> {
         self.conn.update_user(user).await?;
+        Ok(())
     }
 }
 
@@ -157,6 +153,7 @@ impl<Conn: 'static + DBConnection> From<Conn> for Users {
         Users {
             conn: Box::from(db),
             sess: Box::new(chashmap::CHashMap::new()),
+            mailer: None,
         }
     }
 }
@@ -178,6 +175,7 @@ impl<T0: 'static + DBConnection, T1: 'static + SessionManager> From<(T0, T1)> fo
         Users {
             conn: Box::from(db),
             sess: Box::new(ss),
+            mailer: None,
         }
     }
 }

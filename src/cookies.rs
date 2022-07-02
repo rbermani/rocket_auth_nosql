@@ -39,8 +39,10 @@ impl<'r> FromRequest<'r> for Session {
         }
     }
 }
-#[throws(as Option)]
-fn get_session(cookies: &CookieJar) -> Session {
-    let session = cookies.get_private("rocket_auth_nosql")?;
-    from_str(session.value()).ok()?
+
+fn get_session(cookies: &CookieJar) -> Option<Session> {
+    if let Some(session) = cookies.get_private("rocket_auth_nosql") {
+        return from_str(session.value()).ok();
+    }
+    None
 }

@@ -7,32 +7,36 @@ use mongodb::bson::oid::ObjectId;
 const YEAR_IN_SECS: usize = 365 * 60 * 60 * 24;
 
 impl SessionManager for Client {
-    #[throws(Error)]
-    fn insert(&self, id: ObjectId, key: String) {
+
+    fn insert(&self, id: ObjectId, key: String) -> Result<()> {
         let mut cnn = self.get_connection()?;
         cnn.set_ex(&id.bytes(), key, YEAR_IN_SECS)?;
+        Ok(())
     }
-    #[throws(Error)]
-    fn insert_for(&self, id: ObjectId, key: String, time: Duration) {
+
+    fn insert_for(&self, id: ObjectId, key: String, time: Duration) -> Result<()> {
         let mut cnn = self.get_connection()?;
         cnn.set_ex(&id.bytes(), key, time.as_secs() as usize)?;
+        Ok(())
     }
-    #[throws(Error)]
-    fn remove(&self, id: ObjectId) {
+
+    fn remove(&self, id: ObjectId) -> Result<()> {
         let mut cnn = self.get_connection()?;
         cnn.del(&id.bytes())?;
+        Ok(())
     }
-    #[throws(as Option)]
-    fn get(&self, id: ObjectId) -> String {
+
+    fn get(&self, id: ObjectId) -> Option<String> {
         let mut cnn = self.get_connection().ok()?;
         let key = cnn.get(&id.bytes()).ok()?;
-        key
+        Some(key)
     }
-    #[throws(Error)]
-    fn clear_all(&self) {
+
+    fn clear_all(&self) -> Result<()> {
         let mut cnn = self.get_connection()?;
         redis::Cmd::new().arg("FLUSHDB").execute(&mut cnn);
+        Ok(())
     }
-    #[throws(Error)]
-    fn clear_expired(&self) {}
+
+    fn clear_expired(&self) -> Result<()> { Ok(())}
 }

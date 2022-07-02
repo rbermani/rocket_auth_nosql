@@ -67,57 +67,54 @@ impl<T: Deref<Target = Signup>> From<T> for Login {
         }
     }
 }
-#[throws(ValidationError)]
-pub(crate) fn is_secure(password: &str) {
+
+pub(crate) fn is_secure(password: &str) -> Result<(), ValidationError> {
     is_long(password)?;
     has_uppercase(password)?;
     has_lowercase(password)?;
     has_number(password)?;
+    Ok(())
 }
 
-#[throws(ValidationError)]
-fn is_long(password: &str) {
+fn is_long(password: &str) -> Result<(), ValidationError> {
     if password.len() < 8 {
-        throw!(ValidationError::new(
+        return Err(ValidationError::new(
             "The password must be at least 8 characters long.\n"
         ));
     }
+    Ok(())
 }
 #[allow(unreachable_code)]
-#[throws(ValidationError)]
-fn has_uppercase(password: &str) {
+
+fn has_uppercase(password: &str) -> Result<(), ValidationError> {
     for c in password.chars() {
         if c.is_uppercase() {
-            return;
+            return Ok(());
         }
     }
-    throw!(ValidationError::new(
+    Err(ValidationError::new(
         "The password must include at least one uppercase character.\n"
-    ));
+    ))
 }
 #[allow(unreachable_code)]
-#[throws(ValidationError)]
-fn has_lowercase(password: &str) {
+fn has_lowercase(password: &str) -> Result<(), ValidationError>  {
     for c in password.chars() {
         if c.is_lowercase() {
-            return;
+            return Ok(());
         }
     }
-    // throw!(Error::UnsafePasswordHasNoLower)
-    throw!(ValidationError::new(
+    Err(ValidationError::new(
         "The password must include least one uppercase caracter.\n"
     ))
 }
 #[allow(unreachable_code)]
-#[throws(ValidationError)]
-fn has_number(password: &str) {
+fn has_number(password: &str) -> Result<(), ValidationError> {
     for c in password.chars() {
         if c.is_numeric() {
-            return;
+            return Ok(());
         }
     }
-    throw!(ValidationError::new(
+    Err(ValidationError::new(
         "The password has to contain at least one digit.\n"
     ))
-    // throw!(Error::UnsafePasswordHasNoDigit)
 }

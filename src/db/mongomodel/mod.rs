@@ -89,14 +89,14 @@ impl DBConnection for Database {
             Err(UserNotFoundError)
         }
     }
-    async fn get_all_users(&self) -> Vec<User> {
+    async fn get_all_users(&self) -> Result<Vec<User>> {
         let cursor = match self.collection::<User>(COLLECTION)
             .find(None,
             None).await {
                 Ok(cursor) => cursor,
-                Err(_) => return vec![],
+                Err(_) => return Ok(vec![]),
             };
 
-        cursor.try_collect().await.unwrap_or_else(|_| vec![])
+        Ok(cursor.try_collect().await.unwrap_or_else(|_| vec![]))
     }
 }

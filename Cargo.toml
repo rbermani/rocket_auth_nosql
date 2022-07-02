@@ -16,6 +16,7 @@ keywords = ["rocket", "authentication", "auth", "session"]
 all-features = true
 
 [dependencies]
+lettre = { version = "0.10.0-rc.7"}
 rand = "0.8.3"
 sha2 = "0.10.2"
 rust-argon2 = "0.8.3"
@@ -25,7 +26,6 @@ serde_json = "1.0.59"
 chashmap = "2.2.2"
 thiserror = "1.0.25"
 async-trait = "0.1.56"
-fehler = "1.0.0"
 chrono = "0.4.19"
 validator = { version = "0.14.0", features = ["derive"] }
 mongodb = "2.2.2"
