@@ -15,6 +15,7 @@ For more information visit rocket's [configuration guide](https://rocket.rs/v0.5
 - [x] Add UnverifiedUser guard
 
 # TODO
+- [ ] Add CSRF Protection
 - [ ] Add E-Mail content templating
 - [ ] Add TOML file configuration capability for server information, credentials, etc
 - [ ] Ajax inline form responses
