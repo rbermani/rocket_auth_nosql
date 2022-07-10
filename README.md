@@ -10,14 +10,14 @@ This means that in order for cookies to be properly decrypted between launches, 
 For more information visit rocket's [configuration guide](https://rocket.rs/v0.5-rc/guide/configuration/#configuration).
 
 # New Features
-- [x] Replace backend with MongoDB
-- [x] Refactoring to use more idiomatic Rust
-- [x] Add UnverifiedUser guard
+- [x] MongoDB NoSQL backend support
+- [x] Refactored for more idiomatic Rust
+- [x] UnverifiedUser guard
+- [x] Configuration management using Figment
 
 # TODO
-- [ ] Add CSRF Protection
+- [ ] Add CSRF Protection (will wait for feature to land on Rocket upstream)
 - [ ] Add E-Mail content templating
-- [ ] Add TOML file configuration capability for server information, credentials, etc
 - [ ] Ajax inline form responses
 - [ ] Add E-mail logic
 - [ ] Protected selection criteria schema change, so password field is only returned on explicit queries

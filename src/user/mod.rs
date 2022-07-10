@@ -68,6 +68,8 @@ impl Users {
             Ok(_) => {
                 // Send an account verification e-mail if the Mailer is available, otherwise auto-activate
                 if self.mailer.is_some() {
+
+                } else {
                     
                 }
                 Ok(())
